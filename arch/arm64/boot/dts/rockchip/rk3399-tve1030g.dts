@@ -140,7 +140,7 @@
 		compatible = "pwm-regulator";
 		pwms = <&pwm2 0 25000 1>;
 		rockchip,pwm_id= <2>;
-		rockchip,pwm_voltage = <1000000>;
+		rockchip,pwm_voltage = <900000>;
 		regulator-name = "vdd_log";
 		regulator-min-microvolt = <750000>;
 		regulator-max-microvolt = <1350000>;
@@ -220,11 +220,11 @@
 		SYS_STATUS_NORMAL       800000
 		SYS_STATUS_REBOOT       400000
 		SYS_STATUS_SUSPEND      400000
-		SYS_STATUS_VIDEO_1080P  400000
+		SYS_STATUS_VIDEO_1080P  800000
 		SYS_STATUS_VIDEO_4K     800000
 		SYS_STATUS_VIDEO_4K_10B 800000
 		SYS_STATUS_PERFORMANCE  800000
-		SYS_STATUS_BOOST        400000
+		SYS_STATUS_BOOST        800000
 		SYS_STATUS_DUALVIEW     800000
 		SYS_STATUS_ISP          800000
 	>;
