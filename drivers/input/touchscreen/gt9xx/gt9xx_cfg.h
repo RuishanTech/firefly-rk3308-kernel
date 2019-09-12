@@ -53,4 +53,10 @@ u8 gtp_dat_7[] = {
 	#include "WGJ10187_GT910_Config_20140623_104014_0X41.cfg"
 };
 
+u8 gtp_dat_4[] = {
+	/* TODO:Puts your update firmware data here! */
+	/* <480,480 > 4.0 */
+	#include "499_GT911_Config_20181126_164720.cfg"
+};
+
 #endif /* _GOODIX_GT9XX_CFG_H_ */

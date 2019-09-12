@@ -4,10 +4,11 @@
  */
 
 #include <dt-bindings/input/input.h>
-#include "rk3308.dtsi"
+/* #include "rk3308.dtsi" */
+#include "rk3308k.dtsi"
 
 / {
-	model = "Firefly RK3308";
+	model = "Firefly RK3308 Board";
 	compatible = "firefly,rk3308-firefly", "firefly,rk3308";
 
 	chosen {
@@ -286,7 +287,7 @@
 	rockchip,no-deep-low-power;
 	rockchip,loopback-grp = <0>;
 	hp-ctl-gpios = <&gpio0 RK_PA1 GPIO_ACTIVE_HIGH>;
-	spk-ctl-gpios = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
+	spk-ctl-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_HIGH>;
 };
 
 &cpu0 {

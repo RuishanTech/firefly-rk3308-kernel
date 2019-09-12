@@ -7,6 +7,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/slab.h>
+#include <linux/string.h>
 
 #include "sfc_nor.h"
 #include "rkflash_blk.h"
@@ -42,8 +43,8 @@ static int sfc_erase_mtd(struct mtd_info *mtd, struct erase_info *instr)
 	if (len == p_dev->mtd.size) {
 		ret = snor_erase(p_dev, 0, CMD_CHIP_ERASE);
 		if (ret) {
-			PRINT_SFC_E("snor_erase CHIP 0x%x ret=%d\n",
-				    addr, ret);
+			rkflash_print_error("snor_erase CHIP 0x%x ret=%d\n",
+					    addr, ret);
 			instr->state = MTD_ERASE_FAILED;
 			mutex_unlock(&p_dev->lock);
 			return -EIO;
@@ -52,8 +53,8 @@ static int sfc_erase_mtd(struct mtd_info *mtd, struct erase_info *instr)
 		while (len > 0) {
 			ret = snor_erase(p_dev, addr, ERASE_BLOCK64K);
 			if (ret) {
-				PRINT_SFC_E("snor_erase 0x%x ret=%d\n",
-					    addr, ret);
+				rkflash_print_error("snor_erase 0x%x ret=%d\n",
+						    addr, ret);
 				instr->state = MTD_ERASE_FAILED;
 				mutex_unlock(&p_dev->lock);
 				return -EIO;
@@ -102,8 +103,8 @@ static int sfc_write_mtd(struct mtd_info *mtd, loff_t to, size_t len,
 		status = snor_prog_page(p_dev, addr, p_dev->dma_buf,
 					chunk + padding);
 		if (status != SFC_OK) {
-			PRINT_SFC_E("snor_prog_page %x ret= %d\n",
-				    addr, status);
+			rkflash_print_error("snor_prog_page %x ret= %d\n",
+					    addr, status);
 			*retlen = len - size;
 			mutex_unlock(&p_dev->lock);
 			return status;
@@ -140,7 +141,7 @@ static int sfc_read_mtd(struct mtd_info *mtd, loff_t from, size_t len,
 		chunk = (size < NOR_PAGE_SIZE) ? size : NOR_PAGE_SIZE;
 		ret = snor_read_data(p_dev, addr, p_dev->dma_buf, chunk);
 		if (ret != SFC_OK) {
-			PRINT_SFC_E("snor_read_data %x ret=%d\n", addr, ret);
+			rkflash_print_error("snor_read_data %x ret=%d\n", addr, ret);
 			*retlen = len - size;
 			mutex_unlock(&p_dev->lock);
 			return ret;
@@ -155,6 +156,17 @@ static int sfc_read_mtd(struct mtd_info *mtd, loff_t from, size_t len,
 	mutex_unlock(&p_dev->lock);
 	return 0;
 }
+
+/*
+ * if not support rk_partition and partition is confirmed, you can define
+ * strust def_nor_part by adding new partition like following example:
+ *	{"u-boot", 0x1000 * 512, 0x2000 * 512},
+ * Note.
+ * 1. New partition format {name. size, offset}
+ * 2. Unit:Byte
+ * 3. Last partition 'size' can be set 0xFFFFFFFFF to fully user left space.
+ */
+struct mtd_partition def_nor_part[] = {};
 
 int sfc_nor_mtd_init(struct SFNOR_DEV *p_dev)
 {
@@ -177,7 +189,7 @@ int sfc_nor_mtd_init(struct SFNOR_DEV *p_dev)
 
 	p_dev->dma_buf = kmalloc(NOR_PAGE_SIZE, GFP_KERNEL | GFP_DMA);
 	if (!p_dev->dma_buf) {
-		PRINT_SFC_E("kmalloc size=0x%x failed\n", NOR_PAGE_SIZE);
+		rkflash_print_error("kmalloc size=0x%x failed\n", NOR_PAGE_SIZE);
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -204,13 +216,24 @@ int sfc_nor_mtd_init(struct SFNOR_DEV *p_dev)
 					(u64)g_part->part[i].ui_pt_sz << 9;
 				nor_parts[i].mask_flags = 0;
 			}
+		} else {
+			part_num = ARRAY_SIZE(def_nor_part);
+			for (i = 0; i < part_num; i++) {
+				nor_parts[i].name =
+					kstrdup(def_nor_part[i].name,
+						GFP_KERNEL);
+				if (def_nor_part[i].size == 0xFFFFFFFF)
+					def_nor_part[i].size = (capacity << 9) -
+						def_nor_part[i].offset;
+				nor_parts[i].offset =
+					def_nor_part[i].offset;
+				nor_parts[i].size =
+					def_nor_part[i].size;
+				nor_parts[i].mask_flags = 0;
+			}
 		}
 	}
 	kfree(g_part);
-	if (part_num == 0) {
-		ret = -1;
-		goto free_dma_buf;
-	}
 	ret = mtd_device_register(&p_dev->mtd, nor_parts, part_num);
 	if (ret != 0)
 		goto free_dma_buf;

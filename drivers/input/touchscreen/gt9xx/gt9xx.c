@@ -58,6 +58,7 @@
 
 static u8 m89or101 = TRUE;
 static u8 bgt911 = FALSE;
+static u8 bgt40 = FALSE;
 static u8 bgt970 = FALSE;
 static u8 bgt910 = FALSE;
 static u8 gtp_change_x2y = TRUE;
@@ -1437,7 +1438,10 @@ static s32 gtp_init_panel(struct goodix_ts_data *ts)
 		    cfg_info_len[0] =  CFG_GROUP_LEN(gtp_dat_8_9);
 	    }
     }
-    
+    if (bgt40) {
+    	send_cfg_buf[0] = gtp_dat_4;
+		cfg_info_len[0] =  CFG_GROUP_LEN(gtp_dat_4);
+    }
     if (bgt911) {
     	send_cfg_buf[0] = gtp_dat_gt11;
 		cfg_info_len[0] =  CFG_GROUP_LEN(gtp_dat_gt11);
@@ -2657,7 +2661,16 @@ static int goodix_ts_probe(struct i2c_client *client, const struct i2c_device_id
 		gtp_change_x2y = TRUE;
 		gtp_x_reverse = FALSE;
 		gtp_y_reverse = TRUE;
-	}
+	}else if (val == 40) {
+		m89or101 = FALSE;
+		bgt911 = FALSE;
+		bgt970 = FALSE;
+		bgt910 = FALSE;
+        bgt40 =TRUE;
+		gtp_change_x2y = FALSE;
+		gtp_x_reverse = FALSE;
+		gtp_y_reverse = TRUE;
+    }
 
 	ts->tp_regulator = devm_regulator_get(&client->dev, "tp");
 	if (IS_ERR(ts->tp_regulator)) {
@@ -2730,6 +2743,7 @@ static int goodix_ts_probe(struct i2c_client *client, const struct i2c_device_id
 		gtp_y_reverse = TRUE;
     }
  */
+/*gtp_get_chip_type 0x8000*/
 #if GTP_COMPATIBLE_MODE
     gtp_get_chip_type(ts);
     
@@ -2742,7 +2756,7 @@ static int goodix_ts_probe(struct i2c_client *client, const struct i2c_device_id
         }
     }
 #endif
-
+/* gtp_i2c_test   0x8047*/
     ret = gtp_i2c_test(client);
     if (ret < 0)
     {
