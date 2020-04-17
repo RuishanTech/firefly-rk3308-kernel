@@ -455,6 +455,9 @@
 /* SRAM_IMPEDANCE */
 #define RX_DRIVING_MASK		0x6000
 
+/* PLA_LEDSEL */
+#define LED_SEL_VALUE		0x7087
+
 enum rtl_register_content {
 	_1000bps	= 0x10,
 	_100bps		= 0x08,
@@ -4164,6 +4167,27 @@ static void r8152b_get_version(struct r8152 *tp)
 	}
 }
 
+static void r8152b_set_led_sel(struct r8152 *tp)
+{
+	u32	ocp_data;
+	u16	value;
+
+	ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_LEDSEL);
+	value = (u16)(ocp_data & 0xffff);
+
+	if (value != LED_SEL_VALUE) {
+		ocp_write_word(tp, MCU_TYPE_PLA, PLA_LEDSEL, LED_SEL_VALUE);
+
+		ocp_data = ocp_read_word(tp, MCU_TYPE_PLA, PLA_LEDSEL);
+		value = (u16)(ocp_data);
+		if (value == LED_SEL_VALUE) {
+			printk("r8152b: write PLA_LEDSEL=0x%04x succeed\n", value);
+		} else {
+			printk("r8152b: write PLA_LEDSEL=0x%04x failed\n", value);
+		}
+	}
+}
+
 static void rtl8152_unload(struct r8152 *tp)
 {
 	if (test_bit(RTL8152_UNPLUG, &tp->flags))
@@ -4253,6 +4277,7 @@ static int rtl8152_probe(struct usb_interface *intf,
 	tp->intf = intf;
 
 	r8152b_get_version(tp);
+	r8152b_set_led_sel(tp);
 	ret = rtl_ops_init(tp);
 	if (ret)
 		goto out;

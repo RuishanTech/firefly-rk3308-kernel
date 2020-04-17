@@ -357,6 +357,8 @@ static int __hci_req_sync(struct hci_dev *hdev,
 		break;
 	}
 
+	kfree_skb(hdev->req_skb);
+	hdev->req_skb = NULL;
 	hdev->req_status = hdev->req_result = 0;
 
 	BT_DBG("%s end: err %d", hdev->name, err);
@@ -493,6 +495,10 @@ static void bredr_setup(struct hci_request *req)
 	/* Connection accept timeout ~20 secs */
 	param = cpu_to_le16(0x7d00);
 	hci_req_add(req, HCI_OP_WRITE_CA_TIMEOUT, 2, &param);
+
+	/* Page timeout ~15 secs */
+	param = cpu_to_le16(0x5dc0);
+	hci_req_add(req, HCI_OP_WRITE_PG_TIMEOUT, 2, &param);
 }
 
 static void le_setup(struct hci_request *req)

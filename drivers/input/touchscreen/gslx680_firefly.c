@@ -144,6 +144,8 @@ struct gsl_ts {
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
 #endif
+	int screen_max_x;                                                                                                                                                                                                                       
+    int screen_max_y;
 };
 
 #ifdef GSL_DEBUG
@@ -280,6 +282,9 @@ static void gsl_load_fw(struct i2c_client *client)
 	if (0x36 == chip_type) {
 		ptr_fw = GSL3680B_FW;
 		source_len = ARRAY_SIZE(GSL3680B_FW);
+	} else {
+		ptr_fw = GSL1680F_FW;
+		source_len = ARRAY_SIZE(GSL1680F_FW);
 	}
 #endif
 	for (source_line = 0; source_line < source_len; source_line++) {
@@ -331,6 +336,8 @@ static void startup_chip(struct i2c_client *client)
 #ifdef GSL_NOID_VERSION
 	if (is_noid_version)
 		gsl_DataInit(gsl_config_data_id_3680B);
+	else
+		gsl_DataInit(gsl_config_data_id_1680F);
 #endif
 	gsl_ts_write(client, 0xe0, &tmp, 1);
 	msleep(10);
@@ -626,17 +633,17 @@ static void report_key(struct gsl_ts *ts, u16 x, u16 y)
 static void report_data(struct gsl_ts *ts, u16 x, u16 y, u8 pressure, u8 id)
 {
 	if (ts->flip_x == 1)
-		x = SCREEN_MAX_X - x;
+		x = ts->screen_max_x - x;
 
 	if (ts->flip_y == 1)
-		y = SCREEN_MAX_Y - y;
+		y = ts->screen_max_y - y;
 
 	if (ts->swap_xy == 1)
 		swap(x, y);
 
 	print_info("#####id=%d,x=%d,y=%d######\n", id, x, y);
 
-	if (x > SCREEN_MAX_X || y > SCREEN_MAX_Y) {
+	if (x > ts->screen_max_x || y > ts->screen_max_y) {
 	#ifdef HAVE_TOUCH_KEY
 		report_key(ts, x, y);
 	#endif
@@ -644,7 +651,7 @@ static void report_data(struct gsl_ts *ts, u16 x, u16 y, u8 pressure, u8 id)
 	}
 
 #ifdef CONFIG_TCHIP_MACH_BACK_MUSIC
-	y = SCREEN_MAX_Y - y;
+	y = ts->screen_max_y - y;
 #endif
 
 #ifdef REPORT_DATA_ANDROID_4_0
@@ -847,8 +854,8 @@ static int gslX680_ts_init(struct i2c_client *client, struct gsl_ts *ts)
 	set_bit(ABS_MT_TOUCH_MAJOR, input_device->absbit);
 	set_bit(ABS_MT_WIDTH_MAJOR, input_device->absbit);
 
-	input_set_abs_params(input_device, ABS_MT_POSITION_X, 0, SCREEN_MAX_X, 0, 0);
-	input_set_abs_params(input_device, ABS_MT_POSITION_Y, 0, SCREEN_MAX_Y, 0, 0);
+	input_set_abs_params(input_device, ABS_MT_POSITION_X, 0, ts->screen_max_x, 0, 0);
+	input_set_abs_params(input_device, ABS_MT_POSITION_Y, 0, ts->screen_max_y, 0, 0);
 
 	input_set_abs_params(input_device, ABS_MT_TOUCH_MAJOR, 0, PRESS_MAX, 0, 0);
 	input_set_abs_params(input_device, ABS_MT_WIDTH_MAJOR, 0, 200, 0, 0);
@@ -990,6 +997,11 @@ static int gsl_ts_probe(struct i2c_client *client,
 	ts->tp.tp_resume = rk_ts_early_resume;
 	ts->tp.tp_suspend = rk_ts_early_suspend;
 	tp_register_fb(&ts->tp);
+	
+	of_property_read_u32(np, "screen_max_x", &(ts->screen_max_x));
+    of_property_read_u32(np, "screen_max_y", &(ts->screen_max_y));
+	print_info("[tp-gsl] screen_max_x =[%d] \n", ts->screen_max_x);
+    print_info("[tp-gsl] screen_max_y =[%d] \n", ts->screen_max_y);
 
 	ts->irq_pin = of_get_named_gpio_flags(np, "touch-gpio", 0, (enum of_gpio_flags *)&irq_flags);
 	ts->rst_pin = of_get_named_gpio_flags(np, "reset-gpio", 0, &rst_flags);

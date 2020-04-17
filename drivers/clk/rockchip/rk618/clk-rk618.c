@@ -194,9 +194,9 @@ struct rk618_cru {
 	struct clk_onecell_data clk_data;
 };
 
-static char clkin_name[16] = "dummy";
-static char lcdc0_dclkp_name[16] = "dummy";
-static char lcdc1_dclkp_name[16] = "dummy";
+static char clkin_name[32] = "dummy";
+static char lcdc0_dclkp_name[32] = "dummy";
+static char lcdc1_dclkp_name[32] = "dummy";
 
 #define PNAME(x) static const char *const x[]
 
@@ -252,10 +252,10 @@ static const struct clk_divider_data rk618_clk_dividers[] = {
 static const struct clk_gate_data rk618_clk_gates[] = {
 	GATE(MIPI_CLK, "mipi_clk", "dither_clk",
 	     RK618_CRU_CLKSEL1, 10,
-	     0),
+	     CLK_IGNORE_UNUSED),
 	GATE(LVDS_CLK, "lvds_clk", "dither_clk",
 	     RK618_CRU_CLKSEL1, 9,
-	     0),
+	     CLK_IGNORE_UNUSED),
 	GATE(LVTTL_CLK, "lvttl_clk", "dither_clk",
 	     RK618_CRU_CLKSEL1, 12,
 	     0),

@@ -8,8 +8,12 @@
 #include "rk3308b-firefly.dtsi"
 
 / {
-	model = "Firefly RK3308 roc cc analog mic board";
+	model = "Firefly ROC-RK3308B-CC analog mic board";
 	compatible = "firefly,rk3308-roc-cc-amic_emmc", "firefly,rk3308", "rockchip,rk3308";
+
+	chosen {
+                bootargs = "earlycon=uart8250,mmio32,0xff0c0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=squashfs rootwait snd_aloop.index=7";
+        };
 
 	pdm_i2s_dais: pdm-i2s-dais {
 		status = "disabled";

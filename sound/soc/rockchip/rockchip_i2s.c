@@ -514,6 +514,7 @@ static bool rockchip_i2s_rd_reg(struct device *dev, unsigned int reg)
 	case I2S_INTCR:
 	case I2S_XFER:
 	case I2S_CLR:
+	case I2S_TXDR:
 	case I2S_RXDR:
 	case I2S_FIFOLR:
 	case I2S_INTSR:
@@ -528,6 +529,9 @@ static bool rockchip_i2s_volatile_reg(struct device *dev, unsigned int reg)
 	switch (reg) {
 	case I2S_INTSR:
 	case I2S_CLR:
+	case I2S_FIFOLR:
+	case I2S_TXDR:
+	case I2S_RXDR:
 		return true;
 	default:
 		return false;
@@ -537,6 +541,8 @@ static bool rockchip_i2s_volatile_reg(struct device *dev, unsigned int reg)
 static bool rockchip_i2s_precious_reg(struct device *dev, unsigned int reg)
 {
 	switch (reg) {
+	case I2S_RXDR:
+		return true;
 	default:
 		return false;
 	}
@@ -673,6 +679,11 @@ static int rockchip_i2s_probe(struct platform_device *pdev)
 		if (val >= 2 && val <= 8)
 			soc_dai->capture.channels_max = val;
 	}
+
+	if (of_property_read_bool(node, "rockchip,playback-only"))
+		soc_dai->capture.channels_min = 0;
+	else if (of_property_read_bool(node, "rockchip,capture-only"))
+		soc_dai->playback.channels_min = 0;
 
 	i2s->bclk_fs = 64;
 	if (!of_property_read_u32(node, "rockchip,bclk-fs", &val)) {

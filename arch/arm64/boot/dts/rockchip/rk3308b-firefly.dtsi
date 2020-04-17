@@ -11,10 +11,6 @@
 	model = "Firefly RK3308 Board";
 	compatible = "firefly,rk3308-firefly", "firefly,rk3308";
 
-	chosen {
-		bootargs = "earlycon=uart8250,mmio32,0xff0c0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=squashfs rootwait snd_aloop.index=7";
-	};
-
 	adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 1>;
@@ -294,13 +290,13 @@
 
 	wireless-wlan {
 		compatible = "wlan-platdata";
-		rockchip,grf = <&grf>;
+		//rockchip,grf = <&grf>;
 	       	//pinctrl-names = "default";
        		//pinctrl-0 = <&wifi_wake_host>;
        		wifi_chip_type = "rtl8188eu";
        		//WIFI,host_wake_irq = <&gpio0 RK_PA0 GPIO_ACTIVE_LOW>;
         	//WIFI,poweren_gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
@@ -390,6 +386,7 @@
 		pinctrl-0 = <&i2s_8ch_1_m0_mclk>;
 		pdn-gpios = <&gpio0 RK_PA5 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio1 RK_PA1 GPIO_ACTIVE_LOW>;
+		status = "disabled";
 	};
 
 	is31fl3236: led-controller@3c {
@@ -398,7 +395,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reset-gpios = <&gpio0 RK_PB0 GPIO_ACTIVE_HIGH>;
-		status = "okay";
+		status = "disabled";
 
 		led1: led@1 {
 			label = "led1";

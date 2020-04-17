@@ -39,7 +39,9 @@
 #include <video/of_display_timing.h>
 #include <linux/of_graph.h>
 #include <video/videomode.h>
+#include <linux/of_gpio.h> 
 
+#define DBG(fmt, ...) //printk("[panel]%s-%d:" fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 struct cmd_ctrl_hdr {
 	u8 dtype;	/* data type */
 	u8 wait;	/* ms */
@@ -98,6 +100,24 @@ struct panel_desc {
 	u32 bus_format;
 };
 
+struct pwrctr {
+       char name[32];
+	   int gpio;
+	   int atv_val;
+       int delay;
+};
+
+struct rockchip_pwrctr_list {
+       struct list_head list;
+       struct pwrctr pc;
+};
+
+struct rockchip_pwrctr {
+       struct list_head pclist_head;
+       int debug;
+       bool node_found;
+};
+
 struct panel_simple {
 	struct drm_panel base;
 	struct mipi_dsi_device *dsi;
@@ -114,6 +134,9 @@ struct panel_simple {
 
 	struct gpio_desc *enable_gpio;
 	struct gpio_desc *reset_gpio;
+
+	struct rockchip_pwrctr pwrctr;
+	
 	int cmd_type;
 
 	struct gpio_desc *spi_sdi_gpio;
@@ -239,6 +262,88 @@ static int panel_simple_parse_cmds(struct device *dev,
 		pcmds->cmds[i].payload = bp;
 		bp += dchdr->dlen;
 		len -= dchdr->dlen;
+	}
+
+	return 0;
+}
+
+int panel_simple_dsi_parse_pclist(struct panel_simple *panel)
+{
+	struct rockchip_pwrctr *pwrctr = &(panel->pwrctr);
+	struct list_head *pclist_head = &(pwrctr->pclist_head); 
+	struct list_head *pos;
+	struct rockchip_pwrctr_list *pclist;
+	struct device_node *root, *child;
+	enum of_gpio_flags flags;
+	u32 val = 0;
+	int ret;
+
+	DBG("enter\n");
+
+	root= of_get_child_by_name(panel->dev->of_node,
+					  "power_ctr");
+	if (!root) {
+		pwrctr->node_found = false;
+		dev_dbg(panel->dev, "failed to find power_ctr node\n");
+		return 0;
+	} else {
+		pwrctr->node_found = true;
+	}
+
+	INIT_LIST_HEAD(pclist_head);
+
+	if (!of_property_read_u32(root, "rockchip,debug", &val))
+		pwrctr->debug = val;
+	else
+		pwrctr->debug = 0;
+
+	for_each_child_of_node(root, child) {
+		if (!of_device_is_available(child))
+			continue;
+		pclist = kmalloc(sizeof(*pclist), GFP_KERNEL);
+		if (!pclist) {
+			printk("ERR:%s out of memory\n", __func__);
+			return -ENOMEM;
+		}
+
+		strncpy(pclist->pc.name, child->name, sizeof(pclist->pc.name));
+
+		pclist->pc.gpio = of_get_gpio_flags(child, 0, &flags);
+		if (!gpio_is_valid(pclist->pc.gpio)) {
+			dev_err(panel->dev, "%s ivalid gpio\n",
+					child->name);
+			return -EINVAL;
+		}    
+		pclist->pc.atv_val = !(flags & OF_GPIO_ACTIVE_LOW);
+		ret = gpio_request(pclist->pc.gpio,
+				child->name);
+		if (ret) {
+			dev_err(panel->dev,
+					"request %s gpio fail:%d\n",
+					child->name, ret);
+		}    
+
+		/* don't set gpio value for fixing uboot display */
+		//gpio_direction_output(pclist->pc.gpio, !pclist->pc.atv_val);
+
+		
+		if (!of_property_read_u32(child, "rockchip,delay", &val))
+			pclist->pc.delay = val;
+		else
+			pclist->pc.delay = 0;
+        DBG("%s(%d): atv_val=%d, delay=%d\n", child->name, pclist->pc.gpio, pclist->pc.atv_val, pclist->pc.delay);
+  
+		list_add_tail(&pclist->list, pclist_head);
+	}
+
+	if(pwrctr->debug > 0) {
+		struct pwrctr *pc;
+		list_for_each(pos, pclist_head) {
+			pclist= list_entry(pos, struct rockchip_pwrctr_list, list);
+			pc=&(pclist->pc);
+			printk("panel_simple: parse %s: gpio=%d, atv_val=%d, delay=%dms\n", 
+					pc->name, pc->gpio, pc->atv_val, pc->delay);
+		}
 	}
 
 	return 0;
@@ -592,10 +697,37 @@ static int panel_simple_disable(struct drm_panel *panel)
 static int panel_simple_unprepare(struct drm_panel *panel)
 {
 	struct panel_simple *p = to_panel_simple(panel);
-	int err = 0;
+	struct list_head *pclist_head = &(p->pwrctr.pclist_head); 
+	struct list_head *pos;
+	struct rockchip_pwrctr_list *pclist;
+	struct pwrctr *pc;
+	u32 val;
+	struct device_node *new_root = of_get_child_by_name(p->dev->of_node, "power_ctr");
+	int err;
 
 	if (!p->prepared)
 		return 0;
+
+
+	if (p->pwrctr.node_found && !list_empty(pclist_head))
+	{
+		list_for_each(pos, pclist_head) {
+			pclist = list_entry(pos, struct rockchip_pwrctr_list,
+					list);
+			pc = &pclist->pc;
+			if(p->pwrctr.debug > 0) {
+				DBG("panel_simple: set %s(%d) active=0\n", pc->name, pc->gpio);
+			}
+			if (of_property_read_u32(new_root, "power_enable", &val))
+			{
+				gpio_direction_output(pc->gpio,1);
+			}
+			else
+			{
+				gpio_direction_output(pc->gpio,!pc->atv_val);
+			}
+		}
+	}
 
 	if (p->off_cmds) {
 		if (p->dsi)
@@ -625,6 +757,12 @@ static int panel_simple_unprepare(struct drm_panel *panel)
 static int panel_simple_prepare(struct drm_panel *panel)
 {
 	struct panel_simple *p = to_panel_simple(panel);
+	struct rockchip_pwrctr *pwrctr = &(p->pwrctr);
+	struct list_head *pclist_head = &(pwrctr->pclist_head); 
+	struct list_head *pos;
+	struct rockchip_pwrctr_list *pclist;
+	struct pwrctr *pc;
+
 	int err;
 
 	if (p->prepared)
@@ -648,6 +786,23 @@ static int panel_simple_prepare(struct drm_panel *panel)
 	if (p->desc && p->desc->delay.reset)
 		panel_simple_sleep(p->desc->delay.reset);
 
+	if (p->pwrctr.node_found && !list_empty(pclist_head))
+	{
+		list_for_each(pos, pclist_head) {
+			pclist = list_entry(pos, struct rockchip_pwrctr_list,
+					list);
+			pc = &pclist->pc;
+
+			if(pwrctr->debug > 0) {
+				printk("panel_simple: set %s(%d) active=1,delay:%dms\n",
+						pc->name, pc->gpio, pc->delay);
+			}
+            DBG("%s: set atv_val=%d, delay=%d\n", pc->name, pc->atv_val, pc->delay);
+			gpio_direction_output(pc->gpio, pc->atv_val);
+			mdelay(pc->delay);
+		}
+	}
+	
 	if (p->reset_gpio)
 		gpiod_direction_output(p->reset_gpio, 0);
 
@@ -792,6 +947,7 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
 	panel->desc = of_desc;
 	panel->dev = dev;
 
+	panel_simple_dsi_parse_pclist(panel);
 	err = panel_simple_get_cmds(panel);
 	if (err) {
 		dev_err(dev, "failed to get init cmd: %d\n", err);
