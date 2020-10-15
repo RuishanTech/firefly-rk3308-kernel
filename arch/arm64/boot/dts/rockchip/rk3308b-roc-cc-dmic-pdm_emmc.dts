@@ -12,7 +12,7 @@
 	compatible = "firefly,rk3308-roc-cc-dmic-pdm_emmc", "firefly,rk3308", "rockchip,rk3308";
 
 	chosen {
-                bootargs = "earlycon=uart8250,mmio32,0xff0c0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=squashfs rootwait snd_aloop.index=7";
+                bootargs = "earlycon=uart8250,mmio32,0xff0c0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=ext2 rootwait snd_aloop.index=7";
         };
 
 	pdm_i2s_dais: pdm-i2s-dais {

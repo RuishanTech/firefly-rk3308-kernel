@@ -13,7 +13,7 @@
 	compatible = "firefly,rk3308b-roc-cc-amic-rgb_7.0inch_emmc", "firefly,rk3308", "rockchip,rk3308";
 
 	chosen {
-                bootargs = "earlycon=uart8250,mmio32,0xff0c0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=squashfs rootwait snd_aloop.index=7";
+                bootargs = "earlycon=uart8250,mmio32,0xff0c0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=ext2 rootwait snd_aloop.index=7";
         };
 
 	pdm_i2s_dais: pdm-i2s-dais {
@@ -132,7 +132,7 @@
 &vad {
     status = "okay";
     rockchip,audio-src = <&i2s_8ch_2>;
-    rockchip,det-channel = <3>;
+    rockchip,det-channel = <0>;
     rockchip,mode = <1>;
     rockchip,buffer-time-ms = <200>;
     #sound-dai-cells = <0>;
