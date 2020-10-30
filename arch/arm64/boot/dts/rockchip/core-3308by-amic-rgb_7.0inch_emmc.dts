@@ -13,7 +13,7 @@
 	compatible = "firefly,core-3308by", "firefly,rk3308", "rockchip,rk3308";
 
 	chosen {
-                bootargs = "earlycon=uart8250,mmio32,0xff0e0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=squashfs rootwait snd_aloop.index=7 snd_aloop.use_raw_jiffies=1";
+                bootargs = "earlycon=uart8250,mmio32,0xff0e0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=ext2 rootwait snd_aloop.index=7 snd_aloop.use_raw_jiffies=1";
         };
 
 	pdm_i2s_dais: pdm-i2s-dais {
