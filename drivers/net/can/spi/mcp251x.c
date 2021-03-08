@@ -66,6 +66,7 @@
 #include <linux/freezer.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
+#include <linux/iopoll.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/netdevice.h>
@@ -624,10 +625,19 @@ static int mcp251x_setup(struct net_device *net, struct mcp251x_priv *priv,
 	return 0;
 }
 
+static u8 mcp251x_read_stat(struct spi_device *spi)
+{
+    return mcp251x_read_reg(spi, CANSTAT) & CANCTRL_REQOP_MASK;
+}
+
+#define mcp251x_read_stat_poll_timeout(addr, val, cond, delay_us, timeout_us) \
+    readx_poll_timeout(mcp251x_read_stat, addr, val, cond, \
+               delay_us, timeout_us)
+
 static int mcp251x_hw_reset(struct spi_device *spi)
 {
 	struct mcp251x_priv *priv = spi_get_drvdata(spi);
-	u8 reg;
+    u8 value;
 	int ret;
 
 	/* Wait for oscillator startup timer after power up */
@@ -641,11 +651,13 @@ static int mcp251x_hw_reset(struct spi_device *spi)
 	/* Wait for oscillator startup timer after reset */
 	mdelay(MCP251X_OST_DELAY_MS);
 	
-	reg = mcp251x_read_reg(spi, CANSTAT);
-	if ((reg & CANCTRL_REQOP_MASK) != CANCTRL_REQOP_CONF)
-		return -ENODEV;
-
-	return 0;
+    /* Wait for reset to finish */
+    ret = mcp251x_read_stat_poll_timeout(spi, value, value == CANCTRL_REQOP_CONF,
+                         MCP251X_OST_DELAY_MS * 1000,
+                         USEC_PER_SEC);
+    if (ret)
+        dev_err(&spi->dev, "MCP251x didn't enter in conf mode after reset\n");
+    return ret;
 }
 
 static int mcp251x_hw_probe(struct spi_device *spi)

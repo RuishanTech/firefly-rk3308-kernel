@@ -702,6 +702,17 @@ config SPI_TLE62X0
 # Add new SPI protocol masters in alphabetical order above this line
 #
 
+config SPI_WK2XXX
+    tristate "wk2xxx Spi Switch Uart"
+    depends on SPI
+    ---help---
+         Say Y to get the third party encryption service.
+
+config SPI_LORA1276
+	tristate "LoRa1276C1 module spi driver support"
+	help
+	 This supports user to use LoRa1276C1 module.
+
 endif # SPI_MASTER
 
 # (slave support would go here)
