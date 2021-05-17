@@ -180,11 +180,13 @@ LOGO_KERNEL := $(notdir $(wildcard $(srctree)/logo_kernel.bmp))
 	$(Q) if [ -x $(srctree)/scripts/mkbootimg ]; then \
 		$(srctree)/scripts/mkbootimg \
 			--kernel $(objtree)/arch/arm64/boot/Image \
+			--ramdisk ramdisk.img \
 			--second resource.img \
 			-o boot.img && \
 		echo '  Image:  boot.img (with Image resource.img) is ready'; \
 		$(srctree)/scripts/mkbootimg \
 			--kernel $(objtree)/arch/arm64/boot/Image.lz4 \
+			--ramdisk ramdisk.img \
 			--second resource.img \
 			-o zboot.img && \
 		echo '  Image:  zboot.img (with Image.lz4 resource.img) is ready'; \
