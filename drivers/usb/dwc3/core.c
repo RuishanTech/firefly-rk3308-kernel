@@ -727,6 +727,10 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	if (dwc->tx_ipgap_linecheck_dis_quirk)
 		reg |= DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS;
 
+	if (dwc->maximum_speed == USB_SPEED_HIGH ||
+	    dwc->maximum_speed == USB_SPEED_FULL)
+		reg |= DWC3_GUCTL1_DEV_FORCE_20_CLK_FOR_30_CLK;
+
 	dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
 
 	if (dwc->grxthrcfg[0] > 0) {
@@ -968,7 +972,7 @@ static int dwc3_probe(struct platform_device *pdev)
 	dwc->regs_size	= resource_size(res);
 
 	/* default to highest possible threshold */
-	lpm_nyet_threshold = 0xff;
+	lpm_nyet_threshold = 0xf;
 
 	/* default to -3.5dB de-emphasis */
 	tx_de_emphasis = 1;
@@ -1048,6 +1052,8 @@ static int dwc3_probe(struct platform_device *pdev)
 
 	device_property_read_u32_array(dev, "snps,grx-threshold-cfg",
 				       dwc->grxthrcfg, 2);
+	dwc->needs_fifo_resize = device_property_read_bool(dev,
+				"snps,tx-fifo-resize");
 
 	/* default to superspeed if no maximum_speed passed */
 	if (dwc->maximum_speed == USB_SPEED_UNKNOWN)

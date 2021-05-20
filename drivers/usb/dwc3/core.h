@@ -202,6 +202,7 @@
 
 /* Global User Control 1 Register */
 #define DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS	BIT(28)
+#define DWC3_GUCTL1_DEV_FORCE_20_CLK_FOR_30_CLK	BIT(26)
 #define DWC3_GUCTL1_DEV_L1_EXIT_BY_HW	(1 << 24)
 
 /* Global USB2 PHY Configuration Register */
@@ -541,7 +542,6 @@ struct dwc3_ep {
 #define DWC3_EP_BUSY		(1 << 4)
 #define DWC3_EP_PENDING_REQUEST	(1 << 5)
 #define DWC3_EP_MISSED_ISOC	(1 << 6)
-#define DWC3_EP_TRANSFER_STARTED (1 << 8)
 
 	/* This last one is specific to EP0 */
 #define DWC3_EP0_DIR_IN		(1 << 31)
@@ -844,6 +844,8 @@ struct dwc3_scratchpad_array {
  * 	1	- -3.5dB de-emphasis
  * 	2	- No de-emphasis
  * 	3	- Reserved
+ * @needs_fifo_resize: set if we want to resize TXFIFO.
+ * @fifo_resize_status: true if the TXFIFOs have been resized.
  */
 struct dwc3 {
 	struct usb_ctrlrequest	*ctrl_req;
@@ -996,6 +998,8 @@ struct dwc3 {
 
 	unsigned		tx_de_emphasis_quirk:1;
 	unsigned		tx_de_emphasis:2;
+	unsigned		needs_fifo_resize:1;
+	unsigned		fifo_resize_status:1;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -1202,6 +1206,7 @@ static inline int dwc3_send_gadget_generic_command(struct dwc3 *dwc,
 int dwc3_gadget_suspend(struct dwc3 *dwc);
 int dwc3_gadget_resume(struct dwc3 *dwc);
 void dwc3_gadget_process_pending_events(struct dwc3 *dwc);
+void dwc3_gadget_disconnect_interrupt(struct dwc3 *dwc);
 #else
 static inline int dwc3_gadget_suspend(struct dwc3 *dwc)
 {
@@ -1214,6 +1219,10 @@ static inline int dwc3_gadget_resume(struct dwc3 *dwc)
 }
 
 static inline void dwc3_gadget_process_pending_events(struct dwc3 *dwc)
+{
+}
+
+static inline void dwc3_gadget_disconnect_interrupt(struct dwc3 *dwc)
 {
 }
 #endif /* !IS_ENABLED(CONFIG_USB_DWC3_HOST) */

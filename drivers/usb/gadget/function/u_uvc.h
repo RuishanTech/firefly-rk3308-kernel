@@ -16,6 +16,7 @@
 #ifndef U_UVC_H
 #define U_UVC_H
 
+#include <linux/mutex.h>
 #include <linux/usb/composite.h>
 #include <linux/usb/video.h>
 
@@ -24,10 +25,13 @@ DECLARE_UVC_EXTENSION_UNIT_DESCRIPTOR(1, 1);
 
 struct f_uvc_opts {
 	struct usb_function_instance			func_inst;
-	unsigned int					uvc_gadget_trace_param;
+	bool						streaming_bulk;
 	unsigned int					streaming_interval;
 	unsigned int					streaming_maxpacket;
 	unsigned int					streaming_maxburst;
+
+	unsigned int					control_interface;
+	unsigned int					streaming_interface;
 
 	/*
 	 * Control descriptors array pointers for full-/high-speed and
@@ -85,7 +89,4 @@ struct f_uvc_opts {
 	int				refcnt;
 };
 
-void uvc_set_trace_param(unsigned int trace);
-
 #endif /* U_UVC_H */
-

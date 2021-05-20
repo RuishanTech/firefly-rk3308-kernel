@@ -682,11 +682,9 @@ int usb_gadget_disconnect(struct usb_gadget *gadget)
 		goto out;
 	}
 
-	if (!gadget->uvc_enabled) {
-		ret = gadget->ops->pullup(gadget, 0);
-		if (!ret)
-			gadget->connected = 0;
-	}
+	ret = gadget->ops->pullup(gadget, 0);
+	if (!ret)
+		gadget->connected = 0;
 
 out:
 	trace_usb_gadget_disconnect(gadget, ret);
@@ -710,10 +708,10 @@ int usb_gadget_deactivate(struct usb_gadget *gadget)
 {
 	int ret = 0;
 
-	if (gadget->deactivated)
+	if (!gadget || gadget->deactivated)
 		goto out;
 
-	if (gadget->connected) {
+	if (gadget->connected && !gadget->uvc_enabled) {
 		ret = usb_gadget_disconnect(gadget);
 		if (ret)
 			goto out;
