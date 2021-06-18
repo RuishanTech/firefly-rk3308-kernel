@@ -1,7 +1,4 @@
 / {
-    model = "Firefly ROC-RK3308B-CC-PLUS-EXT board";
-    compatible = "firefly,rk3308-roc-cc-plus-ext", "firefly,rk3308", "rockchip,rk3308";
-
     vcc3v3_4g_power: vcc3v3-4g-power-regulator {
        compatible = "regulator-fixed";
        enable-active-high;
@@ -29,6 +26,42 @@
         #clock-cells = <0>;
         clock-frequency = <8000000>;        //MCP2515_CAN模块的晶振为8MHz
     };
+
+    leds {
+        status = "okay";
+        compatible = "gpio-leds";
+
+        L1 {
+            label = "firefly:green:L1";
+            gpios = <&gpio2 RK_PA7 GPIO_ACTIVE_HIGH>;
+        };
+
+        L2 {
+            label = "firefly:green:L2";
+            gpios = <&gpio2 RK_PA6 GPIO_ACTIVE_HIGH>;
+        };
+
+        L3 {
+            label = "firefly:green:L3";
+            gpios = <&gpio2 RK_PB3 GPIO_ACTIVE_HIGH>;
+        };
+
+        L4 {
+            label = "firefly:green:L4";
+            gpios = <&gpio2 RK_PB2 GPIO_ACTIVE_HIGH>;
+        };
+
+        L5 {
+            label = "firefly:green:L5";
+            gpios = <&gpio2 RK_PB5 GPIO_ACTIVE_HIGH>;
+        };
+
+        L6 {
+            label = "firefly:green:L6";
+            gpios = <&gpio2 RK_PB4 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
 };
 
 &spi0 {

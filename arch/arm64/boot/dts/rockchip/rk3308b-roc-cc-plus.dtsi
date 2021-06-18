@@ -3,19 +3,9 @@
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  */
 
-/dts-v1/;
-
 #include "rk3308b-firefly.dtsi"
-#include "rk3308b-roc-cc-plus-ext.dtsi"
 
 / {
-	model = "Firefly ROC-RK3308B-CC-PLUS analog mic ext board";
-	compatible = "firefly,rk3308b-roc-cc-plus-amic-ext_emmc", "firefly,rk3308", "rockchip,rk3308";
-
-	chosen {
-                bootargs = "earlycon=uart8250,mmio32,0xff0e0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rw rootfstype=ext4 rootwait snd_aloop.index=7 snd_aloop.use_raw_jiffies=1";
-        };
-
 	pdm_i2s_dais: pdm-i2s-dais {
 		status = "disabled";
 		compatible = "rockchip,rk3308-multi-dais", "rockchip,multi-dais";
@@ -45,47 +35,48 @@
 		rockchip,codec = <&acodec>, <&vad>;
 	};
 
-        vad_acodec_sound: vad-acodec-sound {
-                status = "okay";
-                compatible = "rockchip,multicodecs-card";
-                rockchip,card-name = "rockchip,rk3308b-acodec";
-                rockchip,codec-hp-det;
-                rockchip,mclk-fs = <256>;
-                rockchip,cpu = <&i2s_8ch_2>;
-                rockchip,codec = <&acodec>, <&vad>;
-        };
+    vad_acodec_sound: vad-acodec-sound {
+        status = "okay";
+        compatible = "rockchip,multicodecs-card";
+        rockchip,card-name = "rockchip,rk3308b-acodec";
+        rockchip,codec-hp-det;
+        rockchip,mclk-fs = <256>;
+        rockchip,cpu = <&i2s_8ch_2>;
+        rockchip,codec = <&acodec>, <&vad>;
+    };
 
 	ir_rx {
-                status = "okay";
-                compatible = "gpio-ir-receiver";
-                gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_HIGH>;
-                pinctrl-names = "default";
+        status = "okay";
+        compatible = "gpio-ir-receiver";
+        gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_HIGH>;
+        pinctrl-names = "default";
 		pinctrl-0 = <&ir_recv_pin>;
-        };
+    };
 
-        ir_tx {
-                status = "okay";
-                compatible = "pwm-ir-tx";
-                pwms = <&pwm5 0 25000 0>;
-        };
+    ir_tx {
+        status = "okay";
+        compatible = "pwm-ir-tx";
+        pwms = <&pwm5 0 25000 0>;
+    };
 
-    	leds {
-        	status = "okay";
-        	compatible = "gpio-leds";
-        	power {
-            		label = "firefly:red:power"; 
-            		linux,default-trigger = "ir-power-click";
-            		default-state = "on";
-            		gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
+    leds {
+        status = "okay";
+        compatible = "gpio-leds";
+        power {
+            label = "firefly:red:power"; 
+            linux,default-trigger = "ir-power-click";
+            default-state = "on";
+            gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
         };
 
         user {
-        	label = "firefly:blue:user";
-        	linux,default-trigger = "ir-user-click";
-        	default-state = "off";
-            	gpios = <&gpio0 RK_PB2 GPIO_ACTIVE_HIGH>;
+            label = "firefly:blue:user";
+            linux,default-trigger = "ir-user-click";
+            default-state = "off";
+            gpios = <&gpio0 RK_PB2 GPIO_ACTIVE_HIGH>;
         };
     };
+
 };
 
 &acodec_sound {
